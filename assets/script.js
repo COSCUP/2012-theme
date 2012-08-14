@@ -1,4 +1,4 @@
-"use stricts";
+"use strict";
 
 /*
 
@@ -737,13 +737,10 @@ jQuery(function ($) {
       return;
 
     if (!programs) {
-    /*
       var url = window.location.href
         .match(/^http:\/\/[ipv6\.]*coscup.org\/[^\/]+\//)[0]
         + 'api/program/';
-        */
 
-      var url = 'http://coscup.org/2012/api/program/';
       $.getJSON(
         url,
         function (data) {
@@ -817,6 +814,77 @@ jQuery(function ($) {
       }
     };
 
+    var scrollTimer;
+
+    $('table.program').each(
+      function () {
+        var $this = $(this);
+        $this.prev().after(
+          $('<div class="program" />').append($this).bind(
+            'scroll',
+            function () {
+              var $that = $(this);
+              $that.find('thead th:first, tbody th').translateTo(0);
+              clearTimeout(scrollTimer);
+              scrollTimer = setTimeout(
+                function () {
+                  $that.find('thead th:first, tbody th').translateTo($that.scrollLeft());
+                },
+                200
+              );
+            }
+          )/*.bind(
+            'selectstart',
+            function () {
+              return false;
+            }
+          )*/.bind(
+            'touchstart', //mousedown
+            function (ev) {
+              var $this = $(this),
+              $window = $(window),
+              posX = ev.clientX || ev.originalEvent.touches[0].clientX,
+              posY = ev.clientY || ev.originalEvent.touches[0].clientY;
+              if (!$this.hasClass('expend') || isMobileLayout()) return;
+              $this.addClass('movestart');
+              $window.bind(
+                'touchmove', //mousemove
+                function (ev) {
+                  $this.removeClass('movestart').addClass('moving').scrollLeft(
+                    $this.scrollLeft()
+                    + posX
+                    - (ev.clientX || ev.originalEvent.touches[0].clientX)
+                  );
+                  if (ev.type !== 'touchmove') {
+                    // not to conflict y-dir scroll with non-cancelable(?) browser action
+                    $window.scrollTop(
+                      $window.scrollTop()
+                      + posY
+                      - (ev.clientY || ev.originalEvent.touches[0].clientY)
+                    );
+                  }
+                  posX = ev.clientX || ev.originalEvent.touches[0].clientX;
+                  posY = ev.clientY || ev.originalEvent.touches[0].clientY;
+                }
+              ).bind(
+                'touchend', //mouseup
+                function (ev) {
+                  $window.unbind('touchmove touchend'); //mousemove mouseup
+                  setTimeout(
+                    function () {
+                      $this.removeClass('moving movestart');
+                    },
+                    0
+                  );
+                  return false;
+                }
+              );
+            }
+          )
+        );
+      }
+    );
+
     $('table.program td').each(
       function () {
         var $this = $(this),
@@ -888,6 +956,49 @@ jQuery(function ($) {
 
         if ($outerMeta.children().length) $this.append($outerMeta);
         if ($info.children().length) $this.append($info);
+      }
+    ).bind(
+      'click',
+      function () {
+        var $this = $(this),
+        $div = $this.parents('div.program'),
+        room_id = parseInt((this.className.match(/program_room_(\w+)\b/) || [])[1]),
+        y = $(window).scrollTop() - $this.offset().top;
+
+        if ($div.hasClass('moving')) return false;
+
+        if (window._gaq) _gaq.push(['_trackEvent', 'Program 2012', this.hash]);
+
+        // For mobile
+        $(this).toggleClass('expend');
+
+        // For desktop
+        $div.toggleClass('expend');
+        $div.find('thead th:first, tbody th').translateTo($div.scrollLeft());
+
+        switch (room_id) {
+          case 0:
+          $div.scrollLeft($div[0].scrollWidth*0.26);
+          break;
+          case 1:
+          $div.scrollLeft(0);
+          break;
+          case 2:
+          $div.scrollLeft($div[0].scrollWidth*0.13);
+          break;
+          case 3:
+          $div.scrollLeft($div[0].scrollWidth*0.26);
+          break;
+          case 4:
+          $div.scrollLeft($div[0].scrollWidth*0.39);
+          break;
+          case 5:
+          $div.scrollLeft($div[0].scrollWidth);
+          break;
+        }
+        $(window).scrollTop(
+          $this.offset().top + y
+        );
       }
     );
 
