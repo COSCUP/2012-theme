@@ -40,6 +40,7 @@ switch($this->current[0])
 
     var _gaq = _gaq || [];
     _gaq.push(['_setAccount', 'UA-12923351-1']);
+    _gaq.push(['_setDomainName', 'coscup.org']);
     _gaq.push(['_trackPageview']);
 
     (function() {
